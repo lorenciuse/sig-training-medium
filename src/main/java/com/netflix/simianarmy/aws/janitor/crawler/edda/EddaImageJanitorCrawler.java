@@ -408,15 +408,9 @@ public class EddaImageJanitorCrawler implements JanitorCrawler {
             }
         }
     }
-
-    private void updateReferenceTimeByInstance(String region, List<Resource> batch, long since) {
-        LOGGER.info(String.format("Getting the last reference time by instance for batch of size %d", batch.size()));
-        String batchUrl = getInstanceBatchUrl(region, batch, since);
-        JsonNode batchResult = null;
-        Map<String, Resource> idToResource = Maps.newHashMap();
-        for (Resource resource : batch) {
-            idToResource.put(resource.getId(), resource);
-        }
+    
+    private JsonNode getBatchResult(String batchUrl, List<Resource> batch) {
+    	JsonNode batchResult = null;
         try {
             batchResult = eddaClient.getJsonNodeFromUrl(batchUrl);
         } catch (IOException e) {
@@ -426,6 +420,17 @@ public class EddaImageJanitorCrawler implements JanitorCrawler {
             throw new RuntimeException(String.format("Failed to get valid document from %s, got: %s",
                     batchUrl, batchResult));
         }
+        return batchResult;
+    }
+
+    private void updateReferenceTimeByInstance(String region, List<Resource> batch, long since) {
+        LOGGER.info(String.format("Getting the last reference time by instance for batch of size %d", batch.size()));
+        String batchUrl = getInstanceBatchUrl(region, batch, since);
+        Map<String, Resource> idToResource = Maps.newHashMap();
+        for (Resource resource : batch) {
+            idToResource.put(resource.getId(), resource);
+        }
+        JsonNode batchResult = getBatchResult(batchUrl, batch);
         for (Iterator<JsonNode> it = batchResult.getElements(); it.hasNext();) {
             JsonNode elem = it.next();
             JsonNode data = elem.get("data");
@@ -450,20 +455,11 @@ public class EddaImageJanitorCrawler implements JanitorCrawler {
         LOGGER.info(String.format("Getting the last reference time by launch config for batch of size %d",
                 batch.size()));
         String batchUrl = getLaunchConfigBatchUrl(region, batch, since);
-        JsonNode batchResult = null;
         Map<String, Resource> idToResource = Maps.newHashMap();
         for (Resource resource : batch) {
             idToResource.put(resource.getId(), resource);
         }
-        try {
-            batchResult = eddaClient.getJsonNodeFromUrl(batchUrl);
-        } catch (IOException e) {
-            LOGGER.error("Failed to get response for the batch.", e);
-        }
-        if (batchResult == null || !batchResult.isArray()) {
-            throw new RuntimeException(String.format("Failed to get valid document from %s, got: %s",
-                    batchUrl, batchResult));
-        }
+        JsonNode batchResult = getBatchResult(batchUrl, batch);
         for (Iterator<JsonNode> it = batchResult.getElements(); it.hasNext();) {
             JsonNode elem = it.next();
             JsonNode data = elem.get("data");
