@@ -101,6 +101,48 @@ public class RDSJanitorResourceTracker implements JanitorResourceTracker {
 		if (email.equals("0")) return Types.NULL;
 		return email;
 	}
+	
+	private StringBuilder insertToTable(String table) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("insert into ").append(table);
+		sb.append(" (");
+		sb.append(AWSResource.FIELD_RESOURCE_ID).append(",");
+		sb.append(AWSResource.FIELD_RESOURCE_TYPE).append(",");
+		sb.append(AWSResource.FIELD_REGION).append(",");
+		sb.append(AWSResource.FIELD_OWNER_EMAIL).append(",");
+		sb.append(AWSResource.FIELD_DESCRIPTION).append(",");
+		sb.append(AWSResource.FIELD_STATE).append(",");
+		sb.append(AWSResource.FIELD_TERMINATION_REASON).append(",");
+		sb.append(AWSResource.FIELD_EXPECTED_TERMINATION_TIME).append(",");
+		sb.append(AWSResource.FIELD_ACTUAL_TERMINATION_TIME).append(",");
+		sb.append(AWSResource.FIELD_NOTIFICATION_TIME).append(",");
+		sb.append(AWSResource.FIELD_LAUNCH_TIME).append(",");
+		sb.append(AWSResource.FIELD_MARK_TIME).append(",");
+		sb.append(AWSResource.FIELD_OPT_OUT_OF_JANITOR).append(",");
+		sb.append("additionalFields").append(") values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+		return sb;
+	}
+	
+	private StringBuilder updateTable(String table) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("update ").append(table).append(" set ");
+		sb.append(AWSResource.FIELD_RESOURCE_TYPE).append("=?,");
+		sb.append(AWSResource.FIELD_REGION).append("=?,");
+		sb.append(AWSResource.FIELD_OWNER_EMAIL).append("=?,");
+		sb.append(AWSResource.FIELD_DESCRIPTION).append("=?,");
+		sb.append(AWSResource.FIELD_STATE).append("=?,");
+		sb.append(AWSResource.FIELD_TERMINATION_REASON).append("=?,");
+		sb.append(AWSResource.FIELD_EXPECTED_TERMINATION_TIME).append("=?,");
+		sb.append(AWSResource.FIELD_ACTUAL_TERMINATION_TIME).append("=?,");
+		sb.append(AWSResource.FIELD_NOTIFICATION_TIME).append("=?,");
+		sb.append(AWSResource.FIELD_LAUNCH_TIME).append("=?,");
+		sb.append(AWSResource.FIELD_MARK_TIME).append("=?,");
+		sb.append(AWSResource.FIELD_OPT_OUT_OF_JANITOR).append("=?,");
+		sb.append("additionalFields").append("=? where ");
+		sb.append(AWSResource.FIELD_RESOURCE_ID).append("=? and ");
+		sb.append(AWSResource.FIELD_REGION).append("=?");
+		return sb;
+	}
 
 	/** {@inheritDoc} */
     @Override
@@ -116,26 +158,9 @@ public class RDSJanitorResourceTracker implements JanitorResourceTracker {
 		}
 
     	if (orig == null) {
-    		StringBuilder sb = new StringBuilder();
-    		sb.append("insert into ").append(table);
-    		sb.append(" (");
-    		sb.append(AWSResource.FIELD_RESOURCE_ID).append(",");
-    		sb.append(AWSResource.FIELD_RESOURCE_TYPE).append(",");
-    		sb.append(AWSResource.FIELD_REGION).append(",");
-    		sb.append(AWSResource.FIELD_OWNER_EMAIL).append(",");
-    		sb.append(AWSResource.FIELD_DESCRIPTION).append(",");
-    		sb.append(AWSResource.FIELD_STATE).append(",");
-    		sb.append(AWSResource.FIELD_TERMINATION_REASON).append(",");
-    		sb.append(AWSResource.FIELD_EXPECTED_TERMINATION_TIME).append(",");
-    		sb.append(AWSResource.FIELD_ACTUAL_TERMINATION_TIME).append(",");
-			sb.append(AWSResource.FIELD_NOTIFICATION_TIME).append(",");
-    		sb.append(AWSResource.FIELD_LAUNCH_TIME).append(",");
-    		sb.append(AWSResource.FIELD_MARK_TIME).append(",");
-			sb.append(AWSResource.FIELD_OPT_OUT_OF_JANITOR).append(",");
-    		sb.append("additionalFields").append(") values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
-            LOGGER.debug(String.format("Insert statement is '%s'", sb));
-    		int updated = this.jdbcTemplate.update(sb.toString(),
+            LOGGER.debug(String.format("Insert statement is '%s'", insertToTable(table)));
+    		int updated = this.jdbcTemplate.update(insertToTable(table).toString(),
     								 resource.getId(),
     								 value(resource.getResourceType().toString()),
     								 value(resource.getRegion()),
@@ -152,26 +177,9 @@ public class RDSJanitorResourceTracker implements JanitorResourceTracker {
     								 json);
             LOGGER.debug(String.format("%d rows inserted", updated));
     	} else {
-    		StringBuilder sb = new StringBuilder();
-    		sb.append("update ").append(table).append(" set ");
-    		sb.append(AWSResource.FIELD_RESOURCE_TYPE).append("=?,");
-    		sb.append(AWSResource.FIELD_REGION).append("=?,");
-    		sb.append(AWSResource.FIELD_OWNER_EMAIL).append("=?,");
-    		sb.append(AWSResource.FIELD_DESCRIPTION).append("=?,");
-    		sb.append(AWSResource.FIELD_STATE).append("=?,");
-    		sb.append(AWSResource.FIELD_TERMINATION_REASON).append("=?,");
-    		sb.append(AWSResource.FIELD_EXPECTED_TERMINATION_TIME).append("=?,");
-    		sb.append(AWSResource.FIELD_ACTUAL_TERMINATION_TIME).append("=?,");
-			sb.append(AWSResource.FIELD_NOTIFICATION_TIME).append("=?,");
-    		sb.append(AWSResource.FIELD_LAUNCH_TIME).append("=?,");
-    		sb.append(AWSResource.FIELD_MARK_TIME).append("=?,");
-			sb.append(AWSResource.FIELD_OPT_OUT_OF_JANITOR).append("=?,");
-    		sb.append("additionalFields").append("=? where ");
-    		sb.append(AWSResource.FIELD_RESOURCE_ID).append("=? and ");
-			sb.append(AWSResource.FIELD_REGION).append("=?");
 
-            LOGGER.debug(String.format("Update statement is '%s'", sb));
-    		int updated = this.jdbcTemplate.update(sb.toString(),
+            LOGGER.debug(String.format("Update statement is '%s'", updateTable(table)));
+    		int updated = this.jdbcTemplate.update(updateTable(table).toString(),
     								 resource.getResourceType().toString(),
     								 value(resource.getRegion()),
 					                 emailValue(resource.getOwnerEmail()),
